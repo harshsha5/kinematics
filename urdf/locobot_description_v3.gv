@@ -1,0 +1,74 @@
+digraph G {
+node [shape=box];
+"base_footprint" [label="base_footprint"];
+"base_link" [label="base_link"];
+"left_cliff_sensor_link" [label="left_cliff_sensor_link"];
+"leftfront_cliff_sensor_link" [label="leftfront_cliff_sensor_link"];
+"right_cliff_sensor_link" [label="right_cliff_sensor_link"];
+"rightfront_cliff_sensor_link" [label="rightfront_cliff_sensor_link"];
+"wall_sensor_link" [label="wall_sensor_link"];
+"bottom_plate" [label="bottom_plate"];
+"arm_base_link" [label="arm_base_link"];
+"shoulder_link" [label="shoulder_link"];
+"elbow_link" [label="elbow_link"];
+"forearm_link" [label="forearm_link"];
+"wrist_link" [label="wrist_link"];
+"gripper_link" [label="gripper_link"];
+"ar_tag" [label="ar_tag"];
+"finger_r" [label="finger_r"];
+"finger_l" [label="finger_l"];
+"head_pan_link" [label="head_pan_link"];
+"head_tilt_link" [label="head_tilt_link"];
+"camera_link" [label="camera_link"];
+"front_wheel_link" [label="front_wheel_link"];
+"gyro_link" [label="gyro_link"];
+"left_wheel_link" [label="left_wheel_link"];
+"right_wheel_link" [label="right_wheel_link"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"base_footprint" -> "base_footprint_joint" [label="xyz: 0 0 0.017 \nrpy: 0 -0 0"]
+"base_footprint_joint" -> "base_link"
+"base_link" -> "base_left_cliff_sensor_joint" [label="xyz: 0.07 0.14 0.01 \nrpy: 0 1.5708 -0"]
+"base_left_cliff_sensor_joint" -> "left_cliff_sensor_link"
+"base_link" -> "base_leftfront_cliff_sensor_joint" [label="xyz: 0.15 0.04 0.01 \nrpy: 0 1.5708 -0"]
+"base_leftfront_cliff_sensor_joint" -> "leftfront_cliff_sensor_link"
+"base_link" -> "base_right_cliff_sensor_joint" [label="xyz: 0.07 -0.14 0.01 \nrpy: 0 1.5708 -0"]
+"base_right_cliff_sensor_joint" -> "right_cliff_sensor_link"
+"base_link" -> "base_rightfront_cliff_sensor_joint" [label="xyz: 0.15 -0.04 0.01 \nrpy: 0 1.5708 -0"]
+"base_rightfront_cliff_sensor_joint" -> "rightfront_cliff_sensor_link"
+"base_link" -> "base_wall_sensor_joint" [label="xyz: 0.09 -0.12 0.042 \nrpy: 0 0 -1"]
+"base_wall_sensor_joint" -> "wall_sensor_link"
+"base_link" -> "bottom_plate_joint" [label="xyz: 0 0 0.075 \nrpy: 0 -0 0"]
+"bottom_plate_joint" -> "bottom_plate"
+"bottom_plate" -> "arm_base_link_joint" [label="xyz: 0.08 0 -0.009 \nrpy: 0 -0 0"]
+"arm_base_link_joint" -> "arm_base_link"
+"arm_base_link" -> "joint_1" [label="xyz: 0 0 0.072 \nrpy: 0 -0 0"]
+"joint_1" -> "shoulder_link"
+"shoulder_link" -> "joint_2" [label="xyz: 0 0 0.04125 \nrpy: 0 -0 0"]
+"joint_2" -> "elbow_link"
+"elbow_link" -> "joint_3" [label="xyz: 0.05 0 0.2 \nrpy: 0 -0 0"]
+"joint_3" -> "forearm_link"
+"forearm_link" -> "joint_4" [label="xyz: 0.2002 0 0 \nrpy: 0 -0 0"]
+"joint_4" -> "wrist_link"
+"wrist_link" -> "joint_5" [label="xyz: 0.063 0.0001 0 \nrpy: 0 -0 0"]
+"joint_5" -> "gripper_link"
+"gripper_link" -> "ar_tag_joint" [label="xyz: 0.02695 0 0.04315 \nrpy: 0 -0 0"]
+"ar_tag_joint" -> "ar_tag"
+"gripper_link" -> "joint_6" [label="xyz: 0.07285 -0.024102 0.0050143 \nrpy: 0 -0 0"]
+"joint_6" -> "finger_r"
+"gripper_link" -> "joint_7" [label="xyz: 0.07285 0.025898 0.0050143 \nrpy: 0 -0 0"]
+"joint_7" -> "finger_l"
+"bottom_plate" -> "head_pan_joint" [label="xyz: -0.018 0 0.41126 \nrpy: 0 -0 0"]
+"head_pan_joint" -> "head_pan_link"
+"head_pan_link" -> "head_tilt_joint" [label="xyz: 0 0 0.05 \nrpy: 0 -0 0"]
+"head_tilt_joint" -> "head_tilt_link"
+"head_tilt_link" -> "camera_joint" [label="xyz: 0.06705 0 -0.00425 \nrpy: 0 -0 0"]
+"camera_joint" -> "camera_link"
+"base_link" -> "front_castor_joint" [label="xyz: 0.13 0 0 \nrpy: 0 -0 0"]
+"front_castor_joint" -> "front_wheel_link"
+"base_link" -> "gyro_joint" [label="xyz: 0 0 0.04 \nrpy: 0 -0 0"]
+"gyro_joint" -> "gyro_link"
+"base_link" -> "left_wheel_joint" [label="xyz: 0 0.1175 0.015 \nrpy: 0 -0 0"]
+"left_wheel_joint" -> "left_wheel_link"
+"base_link" -> "right_wheel_joint" [label="xyz: 0 -0.1175 0.015 \nrpy: 0 -0 0"]
+"right_wheel_joint" -> "right_wheel_link"
+}
