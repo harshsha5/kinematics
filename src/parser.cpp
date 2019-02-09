@@ -59,7 +59,94 @@ Eigen::Matrix4d get_homo_matrix(Eigen::Vector3d d,Eigen::Matrix3d rot_matrix)
   return homo_matrix;
 }
 
+void print_vector(std::vector<double> v)
+{
+  for(int i=0;i<v.size();i++)
+  {std::cout<<v[i]<<"\t";}
+}
 
+Eigen::Vector3d get_rel_trans_vector(urdf::Vector3 p1, urdf::Vector3 p2)
+{
+  //Finds the relative translation vector
+  Eigen::Vector3d p1_vector3d(p1.x,p1.y,p1.z);
+  Eigen::Vector3d p2_vector3d(p2.x,p2.y,p2.z);
+  return p2_vector3d-p1_vector3d;
+}
+
+Eigen::Vector3d get_const_trans_vector(std::string s1, std::string s2,urdf::Model model)
+{ boost::shared_ptr<const urdf::Joint> J;
+  urdf::Vector3 p1;
+  urdf::Vector3 p2;
+  J = model.getJoint(s1);
+  p1 = J->parent_to_joint_origin_transform.position;
+  J = model.getJoint(s2);
+  p2 = J->parent_to_joint_origin_transform.position;
+  return get_rel_trans_vector(p1,p2);
+}
+
+urdf::Vector3 get_base_vector3(std::string s1,urdf::Model model)
+{ urdf::Vector3 p1;
+  boost::shared_ptr<const urdf::Joint> J;
+  J = model.getJoint(s1);
+  p1 = J->parent_to_joint_origin_transform.position;
+  return p1;
+}
+
+std::vector<double> getWristJacobian(std::vector<double> joint_angles,urdf::Model model) 
+{
+  /**
+  * You can change the signature of this method to pass in other objects, such as the path to the URDF file or a
+  * configuration of your URDF file that has been read previously into memory.
+  */
+  urdf::Vector3 p;
+  urdf::Vector3 tem_base_vector3;
+  urdf::Rotation r;
+  std::vector<double> rpy(3);
+  Eigen::Matrix3d rot_matrix;
+  Eigen::Vector3d net;
+  Eigen::Vector3d Jw;
+  Eigen::Vector3d Jv;
+  Eigen::Vector3d tem1;
+  Eigen::Vector3d w;
+  Eigen::VectorXd vec_joined;
+  std::vector<Eigen::Vector3d> rel_dist_list(joint_angles.size());
+  std::vector<Eigen::Matrix3d> rel_rot_list(joint_angles.size());
+  Eigen::Matrix3d temp = Eigen::Matrix3d::Identity();
+  rel_rot_list.push_back(temp);
+  //std::vector<Eigen::Matrix3d> rot_list(joint_angles.size());
+  Eigen::Matrix3d tempo;
+  std::vector<std::string> joint_list = {"joint_1","joint_2","joint_3","joint_4","joint_5"};
+  
+  boost::shared_ptr<const urdf::Joint> J;
+
+  tem1 = get_const_trans_vector(joint_list[0],joint_list[1],model);
+  tem_base_vector3 = get_base_vector3(joint_list[0],model);
+  for(int i=0;i<joint_list.size();i++)
+  { 
+    J = model.getJoint(joint_list[i]);
+    p = J->parent_to_joint_origin_transform.position;
+    r = J->parent_to_joint_origin_transform.rotation;
+    r.getRPY(rpy[0],rpy[1],rpy[2]);
+    Eigen::Vector3d rpy_vector3d(rpy[0],rpy[1],rpy[2]);
+    Eigen::Vector3d axis_vector3d(J->axis.x,J->axis.y,J->axis.z);
+    axis_vector3d = joint_angles[i]*axis_vector3d;
+    net = axis_vector3d + rpy_vector3d;
+    rot_matrix = get_rot_matrix(net);
+    //rot_list.push_back(rot_matrix);
+    if(i!=0)
+    {
+      tempo = rel_rot_list[i-1]*rot_matrix;
+      rel_rot_list.push_back(tempo);
+    }
+    Jw = rel_rot_list[i]*axis_vector3d;
+    w = tem1 - get_rel_trans_vector(tem_base_vector3,p);
+    // Jv = rel_rot_list[i].cross(w);
+    // vec_joined << Jv, Jw;
+    // std::cout << vec_joined <<"\n"<<"\n";    
+  } 
+
+  return std::vector<double>();
+  }
 
 std::vector<double> getWristPose(std::vector<double> joint_angles,urdf::Model model) 
 {
@@ -96,8 +183,10 @@ std::vector<double> getWristPose(std::vector<double> joint_angles,urdf::Model mo
     //std::cout << net_homo_matrix <<"\n"<<"\n";
     count++;  
   }
-
-  return std::vector<double>();
+  //Eigen::VectorXd homo_vector = net_homo_matrix;
+  //homo_vector.resize(homo_vector.cols()*homo_vector.rows(), 1);
+  std::vector<double> vec(net_homo_matrix.data(), net_homo_matrix.data() + net_homo_matrix.rows() * net_homo_matrix.cols());
+  return vec;
 }
 
 int main(int argc, char** argv){
@@ -119,10 +208,13 @@ int main(int argc, char** argv){
   boost::shared_ptr<const urdf::Joint> J;
   boost::shared_ptr< const urdf::Link > L;
   boost::shared_ptr< const urdf::Visual > V;
-  urdf::Vector3 vec;
   std::vector<double> result;
+  std::vector<double> jacobian;
+  urdf::Vector3 vec;
   std::vector<double> joint_angles = {0.727,1.073,0.694,-0.244,1.302}; 
   result = getWristPose(joint_angles,model);
-  std::cout << result <<"\n"<<"\n";
+  jacobian = getWristJacobian(joint_angles,model);
+  //print_vector(result);
   return 0;
 }
+
