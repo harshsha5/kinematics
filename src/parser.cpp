@@ -65,6 +65,12 @@ void print_vector(std::vector<double> v)
   {std::cout<<v[i]<<"\t";}
 }
 
+void print_vector_4d_eigen(std::vector<Eigen::Matrix4d> v)
+{
+  for(int i=0;i<v.size();i++)
+  {std::cout<<v[i]<<"\t";}  
+}
+
 Eigen::Vector3d get_rel_trans_vector(urdf::Vector3 p1, urdf::Vector3 p2)
 {
   //Finds the relative translation vector
@@ -98,54 +104,58 @@ std::vector<double> getWristJacobian(std::vector<double> joint_angles,urdf::Mode
   * You can change the signature of this method to pass in other objects, such as the path to the URDF file or a
   * configuration of your URDF file that has been read previously into memory.
   */
-  urdf::Vector3 p;
-  urdf::Vector3 tem_base_vector3;
-  urdf::Rotation r;
-  std::vector<double> rpy(3);
-  Eigen::Matrix3d rot_matrix;
-  Eigen::Vector3d net;
-  Eigen::Vector3d Jw;
-  Eigen::Vector3d Jv;
-  Eigen::Vector3d tem1;
-  Eigen::Vector3d w;
-  Eigen::VectorXd vec_joined;
-  std::vector<Eigen::Vector3d> rel_dist_list(joint_angles.size());
-  std::vector<Eigen::Matrix3d> rel_rot_list(joint_angles.size());
-  Eigen::Matrix3d temp = Eigen::Matrix3d::Identity();
-  rel_rot_list.push_back(temp);
-  //std::vector<Eigen::Matrix3d> rot_list(joint_angles.size());
-  Eigen::Matrix3d tempo;
   std::vector<std::string> joint_list = {"joint_1","joint_2","joint_3","joint_4","joint_5"};
-  
   boost::shared_ptr<const urdf::Joint> J;
+  Eigen::Matrix4d temp_homo_matrix;
+  Eigen::Matrix4d net_homo_matrix = Eigen::Matrix4d::Identity();
+  urdf::Vector3 p;
+  urdf::Rotation r;
+  std::vector<Eigen::Matrix4d> all_homo_list;
+  std::vector<double> rpy(3);
+  Eigen::Vector3d net;
+  int count = 0;
+  Eigen::Matrix3d rot_matrix;
 
-  tem1 = get_const_trans_vector(joint_list[0],joint_list[1],model);
-  tem_base_vector3 = get_base_vector3(joint_list[0],model);
-  for(int i=0;i<joint_list.size();i++)
+  Eigen::MatrixXd jacob(6,joint_list.size());
+  std::vector<Eigen::Vector3d> list_of_axis_angles;
+
+  for(auto x: joint_list)
   { 
-    J = model.getJoint(joint_list[i]);
+    J = model.getJoint(x);
     p = J->parent_to_joint_origin_transform.position;
     r = J->parent_to_joint_origin_transform.rotation;
     r.getRPY(rpy[0],rpy[1],rpy[2]);
     Eigen::Vector3d rpy_vector3d(rpy[0],rpy[1],rpy[2]);
     Eigen::Vector3d axis_vector3d(J->axis.x,J->axis.y,J->axis.z);
-    axis_vector3d = joint_angles[i]*axis_vector3d;
+    list_of_axis_angles.push_back(axis_vector3d);
+    axis_vector3d = joint_angles[count]*axis_vector3d;
     net = axis_vector3d + rpy_vector3d;
+    //list_of_axis_angles.push_back(net);
     rot_matrix = get_rot_matrix(net);
-    //rot_list.push_back(rot_matrix);
-    if(i!=0)
-    {
-      tempo = rel_rot_list[i-1]*rot_matrix;
-      rel_rot_list.push_back(tempo);
-    }
-    Jw = rel_rot_list[i]*axis_vector3d;
-    w = tem1 - get_rel_trans_vector(tem_base_vector3,p);
-    // Jv = rel_rot_list[i].cross(w);
-    // vec_joined << Jv, Jw;
-    // std::cout << vec_joined <<"\n"<<"\n";    
-  } 
 
-  return std::vector<double>();
+    net = get_dist_vector(p);
+
+    temp_homo_matrix = get_homo_matrix(net,rot_matrix);
+    net_homo_matrix = net_homo_matrix*temp_homo_matrix;
+    all_homo_list.push_back(net_homo_matrix);
+    //std::cout << net_homo_matrix <<"\n"<<"\n";
+    count++;  
+  }
+
+  //std::cout<<all_homo_list[4];
+
+  for(int i=0;i<joint_list.size();i++)
+  {
+    Eigen::Matrix3d Rot = all_homo_list[i].block<3,3>(0,0);
+    Eigen::Vector3d Dist = all_homo_list[4].block<3,1>(0,3) - all_homo_list[i].block<3,1>(0,3);
+    jacob.block<3,1>(0,i) = (Rot*list_of_axis_angles[i]).cross(Dist);
+    jacob.block<3,1>(3,i) = Rot*list_of_axis_angles[i];
+  }
+
+  std::cout<<(jacob);
+
+  std::vector<double> vec(jacob.data(), jacob.data() + jacob.rows() * jacob.cols());
+  return vec;
   }
 
 std::vector<double> getWristPose(std::vector<double> joint_angles,urdf::Model model) 
@@ -214,6 +224,7 @@ int main(int argc, char** argv){
   std::vector<double> joint_angles = {0.727,1.073,0.694,-0.244,1.302}; 
   result = getWristPose(joint_angles,model);
   jacobian = getWristJacobian(joint_angles,model);
+  //std::cout<<"\n"<<"\n";
   //print_vector(result);
   return 0;
 }
